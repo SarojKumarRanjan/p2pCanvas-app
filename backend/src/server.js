@@ -1,4 +1,8 @@
+
 import express, { json } from "express"
+
+
+
 import http from "http"
 import { server as websocketServer } from "webSocket"
 const app = express();
@@ -8,8 +12,12 @@ httpserver.listen(PORT, () => {
     console.log(`listenting to port " ${PORT}`);
 })
 
+
 const clients = {}
 const rooms = {}
+
+
+
 const wsserver = new websocketServer({
     "httpServer": httpserver
 })
@@ -88,6 +96,7 @@ const s4 = () =>{
 const gid = ()=>(s4()+"-"+s4()+"-"+s4()+"-4"+s4().substring(1))
 
 
+   
 
 
 
