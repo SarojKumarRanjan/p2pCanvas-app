@@ -1,12 +1,22 @@
 import react from "react"
-import {ExcalidrawCollaboration} from "./components/excalidraw"
+import Home from "./pages/Home";
+import ExcalidrawCanvas from "./pages/Excalidraw";
+import { createBrowserRouter } from "react-router-dom"
 
-const App = ()=>{
-  return (
-    <>
-      <ExcalidrawCollaboration />
-    </>
-  )
-}
+
+const App = createBrowserRouter([
+  {
+    path: "/",
+    element: <Home />,
+  },
+  {
+    path: "/draw/:id",
+    element: <ExcalidrawCanvas />,
+  }
+]);
+
+
 
 export default App
+
+
