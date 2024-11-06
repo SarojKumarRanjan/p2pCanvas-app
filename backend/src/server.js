@@ -68,18 +68,16 @@ wsserver.on("request", request => {
 
             }
 
-            const client_data = {
-                "id": recieved_client_id
-            }
-            room.client.push(client_data)
-
-            
+        
                 const payload_for_join = {
                     "method" : "user_joined",
-                    "joined_user_id": recieved_client_id,
+                    "joined_user_id": room.client[0].id,
                 }
               
-            
+                const client_data = {
+                    "id": recieved_client_id
+                }
+                room.client.push(client_data)
 
 
 

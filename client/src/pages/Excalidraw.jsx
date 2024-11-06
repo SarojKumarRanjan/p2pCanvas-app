@@ -4,7 +4,8 @@ import { useAppContext } from '../Mycontext';
 
 const ExcalidrawCanvas = () => {
   const UserStream = useRef()
-  
+
+const [callUserId, setCallUserId] = useState(null); 
   const [excalidrawAPI1, setExcalidrawAPI1] = useState(null)
   const { Ws, setWs, client_id, setClient_id, room_id, setRoom_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
@@ -20,41 +21,60 @@ const ExcalidrawCanvas = () => {
  
 
   useEffect(() => {
-    navigator.mediaDevices.getUserMedia({ video: true , audio: true}).then(strean => {
-      userVideo.current.srcObject = strean;
-      UserStream.current = strean;
+    // navigator.mediaDevices.getUserMedia({ video: true , audio: true}).then(strean => {
+    //   userVideo.current.srcObject = strean;
+    //   UserStream.current = strean;
       
      
-    });
-   
-   
-    // const initUserStream = async () => {
-    //   try {
-    //     const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    //     UserStream.current = stream;
-    //     userVideo.current.srcObject = stream;
+    // });
+    const initUserStream = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        UserStream.current = stream;
+        userVideo.current.srcObject = stream;
+        setIsStreamReady(true); 
+     console.log(UserStream.current);
+     console.log(1);
      
-    //   } catch (error) {
-    //     console.error('Error accessing media devices:', error);
-    //   }
-    // };
+     
+      } catch (error) {
+        console.error('Error accessing media devices:', error);
+      }
+    };
+   
+    initUserStream();
 
-    // initUserStream();
+   
   }, []);
 
-
-
+  useEffect(() => {
+    // When isStreamReady becomes true and there’s a callUserId set, callUser will run
+    if (isStreamReady && callUserId) {
+      callUser(callUserId);
+    }
+  }, [isStreamReady, callUserId]);
+  
+  const initiateCallUser = (id) => {
+    // Set callUserId immediately, even if isStreamReady is false
+    setCallUserId(id);
+  };
+  
 
   const callUser = (id) => {
+    
     if (!isStreamReady) {
-      console.error('Stream not ready');
-      return;
+      initiateCallUser(id)
+      console.warn("User stream is not ready yet.");
+      return; // Exit if the stream is not ready
     }
     peerRef.current = createPeer(id)
+    console.log(UserStream.current);
+    console.log(2);
+    
     UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current)
 
     );
-    console.log(UserStream.current);
+    
     
     
     
@@ -174,13 +194,14 @@ console.log(parsedMessage);
       const id = parsedMessage.joined_user_id
       console.log(id);
       
-      // callUser(id);
-      // OtherUser.current = id;
+      callUser(id);
+      OtherUser.current = id;
     
       
     }
     if (parsedMessage.method === "offer") {
       HandleRecieveCall(parsedMessage)
+      console.log("giving offer");
       
       
     }
@@ -192,6 +213,7 @@ console.log(parsedMessage);
 
     if (parsedMessage.method === "ice-candidate") {
       HandleIceCandidateMsg(parsedMessage)
+      console.log("giving ice");
       
     }
     if (parsedMessage.method === "update") {
