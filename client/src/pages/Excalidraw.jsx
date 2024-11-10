@@ -4,43 +4,40 @@ import { useAppContext } from '../Mycontext';
 
 const ExcalidrawCanvas = () => {
   const UserStream = useRef()
-
-const [callUserId, setCallUserId] = useState(null); 
+  const partnerVideo = useRef([]);
+const [callUserId, setCallUserId] = useState([]); 
   const [excalidrawAPI1, setExcalidrawAPI1] = useState(null)
   const { Ws, setWs, client_id, setClient_id, room_id, setRoom_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
-
+  const [videos, setVideos] = useState([]);
   let m = 1;
   let payload;
   let sceneData2
   const userVideo = useRef();
-  const partnerVideo = useRef()
+  
   const peerRef = useRef()
   const OtherUser = useRef()
+  const videoElement = useRef()
  
 
   useEffect(() => {
-    // navigator.mediaDevices.getUserMedia({ video: true , audio: true}).then(strean => {
-    //   userVideo.current.srcObject = strean;
-    //   UserStream.current = strean;
-      
-     
-    // });
+    
     const initUserStream = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         UserStream.current = stream;
         userVideo.current.srcObject = stream;
         setIsStreamReady(true); 
-     console.log(UserStream.current);
-     console.log(1);
+     
+     
      
      
       } catch (error) {
         console.error('Error accessing media devices:', error);
       }
     };
+   
    
     initUserStream();
 
@@ -50,7 +47,9 @@ const [callUserId, setCallUserId] = useState(null);
   useEffect(() => {
     // When isStreamReady becomes true and there’s a callUserId set, callUser will run
     if (isStreamReady && callUserId) {
-      callUser(callUserId);
+     all_video_setup(callUserId)
+    
+     
     }
   }, [isStreamReady, callUserId]);
   
@@ -62,18 +61,15 @@ const [callUserId, setCallUserId] = useState(null);
 
   const callUser = (id) => {
     
-    if (!isStreamReady) {
-      initiateCallUser(id)
-      console.warn("User stream is not ready yet.");
-      return; // Exit if the stream is not ready
-    }
-    peerRef.current = createPeer(id)
-    console.log(UserStream.current);
-    console.log(2);
     
+    peerRef.current = createPeer(id)
+    
+   
     UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current)
 
     );
+    
+    
     
     
     
@@ -92,9 +88,11 @@ const [callUserId, setCallUserId] = useState(null);
         }
       ]
     });
-    peer.onicecandidate = HandleIceCandidateEvent;
-    peer.ontrack = HandleTrackEvent;
+    peer.onicecandidate = (e) => HandleIceCandidateEvent(e,id);
+    peer.ontrack = (e)=> HandleTrackEvent(e,id);
     peer.onnegotiationneeded = ()=>HandleNegotiationNeededEvent(id)
+    
+    
     return peer;
   }
 
@@ -113,6 +111,7 @@ const [callUserId, setCallUserId] = useState(null);
       Ws.send(JSON.stringify(payload))
     }).catch(e => console.log(e))
 
+
   }
 
 
@@ -121,10 +120,10 @@ const [callUserId, setCallUserId] = useState(null);
   const HandleRecieveCall = (incoming) => {
   
     
-  peerRef.current = createPeer()
+  peerRef.current = createPeer(incoming.caller)
     const desc = new RTCSessionDescription(incoming.sdp)
     peerRef.current.setRemoteDescription(desc).then(() => {
-      
+     
         UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current))
       
     }).then(() => {
@@ -139,6 +138,8 @@ const [callUserId, setCallUserId] = useState(null);
       }
       Ws.send(JSON.stringify(payload))
     })
+   
+    
   }
 
 
@@ -151,13 +152,16 @@ const [callUserId, setCallUserId] = useState(null);
 
   }
 
-  const HandleIceCandidateEvent = (e) => {
+  const HandleIceCandidateEvent = (e,id) => {
     if (e.candidate) {
+    
+      
       const payload = {
         "method": "ice-candidate",
-        "target": OtherUser.current,
+        "target": id,
         "candidate": e.candidate
       }
+     
       
       
       if (payload.target) {
@@ -167,6 +171,7 @@ const [callUserId, setCallUserId] = useState(null);
   }
 
   const HandleIceCandidateMsg = (incoming) => {
+   
     
     
     const candidate = new RTCIceCandidate(incoming.candidate)
@@ -174,14 +179,38 @@ const [callUserId, setCallUserId] = useState(null);
     peerRef.current.addIceCandidate(candidate).catch(e => console.log(e)
     )}
   }
-  const HandleTrackEvent = (e) => {
-    partnerVideo.current.srcObject = e.streams[0];
+  const HandleTrackEvent = (e,id) => {
     
+    
+    partnerVideo.current[id] = e.streams[0];
+    setVideos(...videos , id)
+    
+    console.log(videos);
     
   }
   
-
- 
+  const all_video_setup = (id_array )=>{
+    if (!isStreamReady) {
+      initiateCallUser(id_array)
+      console.warn("User stream is not ready yet.");
+      return; // Exit if the stream is not ready
+    }
+    
+    
+    function callWithDelay(index) {
+      if (index >= id_array.length) return; // Exit when all elements have been processed
+      
+      const element = id_array[index];
+      callUser(element.id); // Call function with current element
+  
+      // Call the next iteration after 1 second
+      setTimeout(() => {
+        callWithDelay(index + 1);
+      }, 1000);
+    }
+    callWithDelay(0)
+    }
+    
 Ws.onmessage = (event) => {
     const newMessage = event.data;
     const parsedMessage = JSON.parse(newMessage)
@@ -192,10 +221,15 @@ console.log(parsedMessage);
 
 
       const id = parsedMessage.joined_user_id
-      console.log(id);
       
-      callUser(id);
-      OtherUser.current = id;
+      
+all_video_setup(id)
+
+
+if (parsedMessage.method === "join") {
+  console.log(parsedMessage?.room_data?.id + "ahahhaha");
+ 
+}
     
       
     }
@@ -208,7 +242,7 @@ console.log(parsedMessage);
 
     if (parsedMessage.method === "answer") {
       HandleAnswer(parsedMessage)
-      console.log("answer"+parsedMessage);
+      console.log("answer recieving");
     }
 
     if (parsedMessage.method === "ice-candidate") {
@@ -317,6 +351,7 @@ console.log(parsedMessage);
 
   return (
     <>
+    {/* <div><video autoPlay ref={partnerVideo} ></video>their</div> */}
       <div onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{ height: "500px", width: "500px", display: "inline-block" }}>
@@ -324,9 +359,34 @@ console.log(parsedMessage);
 
         <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI1(api)} />
       </div>
-
+{console.log("first line")}
       <div><video autoPlay ref={userVideo} ></video>my</div>
-      <div><video autoPlay ref={partnerVideo} ></video>their</div>
+      
+      <div>
+      {console.log("Checking partnerVideo.current:", partnerVideo.current)} {/* Logs the content of partnerVideo.current */}
+      {console.log("Checking if map is being called")} 
+    Their video
+    {Object.keys(partnerVideo.current).map((id,index) => {
+       console.log("Inside map, processing streamObject:", id);
+     return (<video
+        key={index}
+        autoPlay
+        
+        ref={(videoElement) => {
+          if (videoElement && id) {
+            videoElement.srcObject = partnerVideo.current[id]; // Set srcObject
+            videoElement.play().catch((error) => {
+              console.error('Error playing video:', error);
+            });
+          }
+        }}
+        
+        
+        style={{ width: '300px', height: '200px', margin: '10px' }}
+      /> )
+})}
+  </div>
+
     </>
   )
 }
