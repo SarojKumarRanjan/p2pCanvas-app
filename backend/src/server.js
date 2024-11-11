@@ -63,54 +63,43 @@ wsserver.on("request", request => {
             const room = rooms[recieved_room_id];
 
 
-            if (room.client.length >= 3) {
+            if (room.client.length >= 4) {
                 return console.log("not able to join");
 
             }
 
-        
-                const payload_for_join = {
-                    "method" : "user_joined",
-                    "joined_user_id": room.client[0].id,
-                }
+       
               
                 const client_data = {
                     "id": recieved_client_id
                 }
                 room.client.push(client_data)
 
-
-
-            //     const newClientConnection = clients[recieved_client_id].connection;
-            //    console.log(newClientConnection.readyState === connection.OPEN)
-            //    newClientConnection.send(JSON.stringify(payload_for_join))
-            // if (Array.isArray(room.client)) {
-            // console.log("updating state from backend ");
-
-            // room.client.filter(client_id => client_id.id !== recieved_client_id)
-            // .forEach(client_id => {
-
-            //     clients[client_id.id].connection.send(JSON.stringify(payload_for_join))
-            
-
-            // });
-
-            // }
-
-
-
-
             if (rooms[recieved_room_id]?.client?.length > 1) updateRoomState(recieved_room_id)
+                
+                
             const payload = {
                 "method": "join",
                 "room_data": rooms[recieved_room_id]
             }
 
+ const id_data = room.client.filter(element=>element.id!== recieved_client_id)
+ 
+                const payload_for_join = {
+                    "method" : "user_joined",
+                    "joined_user_id": id_data
+                }
             const con = clients[recieved_client_id].connection
             con.send(JSON.stringify(payload))
             
-            con.send(JSON.stringify(payload_for_join))
+            // const conn = clients[recieved_client_id].connection
+            // conn.send(JSON.stringify(payload_for_join))
 
+            setTimeout(() => {
+                const conn = clients[recieved_client_id].connection
+            conn.send(JSON.stringify(payload_for_join))
+              }, 1000);
+            
         }
 
         if (recieved_data.method === "state") {
@@ -206,8 +195,8 @@ wsserver.on("request", request => {
             }
             console.log("value of cond for first time" + cond);
 
-            cond = false
-            console.log("value of cond for second time" + cond);
+            
+            
             if (rooms[room_id].state_data) {
                 const payload = {
                     "method": "update",
@@ -232,8 +221,8 @@ wsserver.on("request", request => {
 
 
             }
-
-
+            cond = false
+            console.log("value of cond for second time" + cond);
         }
         else {
             if (JSON.stringify(rooms[room_id].state_data.state) != JSON.stringify(room_state[room_id].state)) {

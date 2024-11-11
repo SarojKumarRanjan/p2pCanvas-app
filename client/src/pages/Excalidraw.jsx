@@ -17,8 +17,7 @@ const [callUserId, setCallUserId] = useState([]);
   const userVideo = useRef();
   
   const peerRef = useRef()
-  const OtherUser = useRef()
-  const videoElement = useRef()
+ 
  
 
   useEffect(() => {
@@ -224,7 +223,7 @@ console.log(parsedMessage);
       
       
 all_video_setup(id)
-
+    }
 
 if (parsedMessage.method === "join") {
   console.log(parsedMessage?.room_data?.id + "ahahhaha");
@@ -232,7 +231,7 @@ if (parsedMessage.method === "join") {
 }
     
       
-    }
+    
     if (parsedMessage.method === "offer") {
       HandleRecieveCall(parsedMessage)
       console.log("giving offer");
@@ -351,7 +350,7 @@ if (parsedMessage.method === "join") {
 
   return (
     <>
-    {/* <div><video autoPlay ref={partnerVideo} ></video>their</div> */}
+   
       <div onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{ height: "500px", width: "500px", display: "inline-block" }}>
@@ -359,7 +358,7 @@ if (parsedMessage.method === "join") {
 
         <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI1(api)} />
       </div>
-{console.log("first line")}
+
       <div><video autoPlay ref={userVideo} ></video>my</div>
       
       <div>
