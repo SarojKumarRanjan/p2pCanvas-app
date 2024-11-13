@@ -184,7 +184,7 @@ const [callUserId, setCallUserId] = useState([]);
     partnerVideo.current[id] = e.streams[0];
     setVideos(...videos , id)
     
-    console.log(videos);
+    
     
   }
   

@@ -1,4 +1,4 @@
-import express, { json } from "express"
+import express from "express"
 import http from "http"
 import { server as websocketServer } from "webSocket"
 const app = express();
@@ -63,7 +63,7 @@ wsserver.on("request", request => {
             const room = rooms[recieved_room_id];
 
 
-            if (room.client.length >= 4) {
+            if (room.client.length >= 6) {
                 return console.log("not able to join");
 
             }
