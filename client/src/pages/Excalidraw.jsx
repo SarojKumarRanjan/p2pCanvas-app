@@ -5,20 +5,17 @@ import { useAppContext } from '../Mycontext';
 const ExcalidrawCanvas = () => {
   const UserStream = useRef()
   const partnerVideo = useRef([]);
+  const userVideo = useRef();
+   const peerRef = useRef()
 const [callUserId, setCallUserId] = useState([]); 
   const [excalidrawAPI1, setExcalidrawAPI1] = useState(null)
-  const { Ws, setWs, client_id, setClient_id, room_id, setRoom_id } = useAppContext()
+  const { Ws, client_id, setClient_id, room_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
   const [videos, setVideos] = useState([]);
   let m = 1;
   let payload;
   let sceneData2
-  const userVideo = useRef();
-  
-  const peerRef = useRef()
- 
- 
 
   useEffect(() => {
     
@@ -36,15 +33,11 @@ const [callUserId, setCallUserId] = useState([]);
         console.error('Error accessing media devices:', error);
       }
     };
-   
-   
+  
     initUserStream();
-
-   
   }, []);
 
   useEffect(() => {
-    // When isStreamReady becomes true and there’s a callUserId set, callUser will run
     if (isStreamReady && callUserId) {
      all_video_setup(callUserId)
     
@@ -53,19 +46,12 @@ const [callUserId, setCallUserId] = useState([]);
   }, [isStreamReady, callUserId]);
   
   const initiateCallUser = (id) => {
-    // Set callUserId immediately, even if isStreamReady is false
     setCallUserId(id);
   };
-  
 
   const callUser = (id) => {
-    
-    
     peerRef.current = createPeer(id)
-    
-   
     UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current)
-
     );
     
     
@@ -74,6 +60,7 @@ const [callUserId, setCallUserId] = useState([]);
     
     
   }
+
   const createPeer = (id) => {
     const peer = new RTCPeerConnection({
       iceServers: [
@@ -90,14 +77,10 @@ const [callUserId, setCallUserId] = useState([]);
     peer.onicecandidate = (e) => HandleIceCandidateEvent(e,id);
     peer.ontrack = (e)=> HandleTrackEvent(e,id);
     peer.onnegotiationneeded = ()=>HandleNegotiationNeededEvent(id)
-    
-    
     return peer;
   }
 
   const HandleNegotiationNeededEvent = (id) => {
-    
-    
     peerRef.current.createOffer().then(offer => {
       return peerRef.current.setLocalDescription(offer);
     }).then(() => {
@@ -109,22 +92,13 @@ const [callUserId, setCallUserId] = useState([]);
       }
       Ws.send(JSON.stringify(payload))
     }).catch(e => console.log(e))
-
-
   }
 
-
-
-
   const HandleRecieveCall = (incoming) => {
-  
-    
   peerRef.current = createPeer(incoming.caller)
     const desc = new RTCSessionDescription(incoming.sdp)
     peerRef.current.setRemoteDescription(desc).then(() => {
-     
         UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current))
-      
     }).then(() => {
       return peerRef.current.createAnswer()
     }).then(answer => {
@@ -137,24 +111,15 @@ const [callUserId, setCallUserId] = useState([]);
       }
       Ws.send(JSON.stringify(payload))
     })
-   
-    
   }
-
-
-
 
   const HandleAnswer = (incoming) => {
     const desc = new RTCSessionDescription(incoming.sdp);
     peerRef.current.setRemoteDescription(desc).catch(e => console.log(e))
-
-
   }
 
   const HandleIceCandidateEvent = (e,id) => {
     if (e.candidate) {
-    
-      
       const payload = {
         "method": "ice-candidate",
         "target": id,
@@ -162,7 +127,7 @@ const [callUserId, setCallUserId] = useState([]);
       }
      
       
-      
+
       if (payload.target) {
         Ws.send(JSON.stringify(payload))
       }
@@ -170,39 +135,32 @@ const [callUserId, setCallUserId] = useState([]);
   }
 
   const HandleIceCandidateMsg = (incoming) => {
-   
-    
-    
     const candidate = new RTCIceCandidate(incoming.candidate)
     if (peerRef.current) {
     peerRef.current.addIceCandidate(candidate).catch(e => console.log(e)
     )}
   }
+
+
   const HandleTrackEvent = (e,id) => {
-    
-    
     partnerVideo.current[id] = e.streams[0];
     setVideos(...videos , id)
-    
-    
-    
   }
   
   const all_video_setup = (id_array )=>{
     if (!isStreamReady) {
       initiateCallUser(id_array)
       console.warn("User stream is not ready yet.");
-      return; // Exit if the stream is not ready
+      return; 
     }
     
     
     function callWithDelay(index) {
-      if (index >= id_array.length) return; // Exit when all elements have been processed
-      
+      if (index >= id_array.length) return;
+
       const element = id_array[index];
-      callUser(element.id); // Call function with current element
-  
-      // Call the next iteration after 1 second
+      callUser(element.id);
+
       setTimeout(() => {
         callWithDelay(index + 1);
       }, 1000);
@@ -217,26 +175,17 @@ console.log(parsedMessage);
 
 
     if (parsedMessage.method === "user_joined") {
-
-
       const id = parsedMessage.joined_user_id
-      
-      
-all_video_setup(id)
+       all_video_setup(id)
     }
 
-if (parsedMessage.method === "join") {
-  console.log(parsedMessage?.room_data?.id + "ahahhaha");
- 
+    if (parsedMessage.method === "join") {
+      console.log(parsedMessage?.room_data?.id + "ahahhaha");
 }
-    
-      
     
     if (parsedMessage.method === "offer") {
       HandleRecieveCall(parsedMessage)
       console.log("giving offer");
-      
-      
     }
 
     if (parsedMessage.method === "answer") {
@@ -251,22 +200,15 @@ if (parsedMessage.method === "join") {
     }
     if (parsedMessage.method === "update") {
       const sceneData1 = parsedMessage.state
-
       if (sceneData1) {
         sceneData1.appState.collaborators = new Map(sceneData1.appState.collaborators);
       }
 
       if (sceneData1) {
         if (excalidrawAPI1) {
-
-
           excalidrawAPI1.updateScene(sceneData1);
-
         }
       }
-
-
-
     }
 }
  
@@ -321,20 +263,11 @@ if (parsedMessage.method === "join") {
 
       }
     }
-
-
-
-
-
-
-
-
   };
 
   const handleMouseEnter = () => {
 
     const id = setInterval(() => {
-      //     // console.log("Action running every 750 ms");
       getSceneData();
     }, 350);
     setIntervalId(id);

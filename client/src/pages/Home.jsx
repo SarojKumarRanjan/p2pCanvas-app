@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppContext } from '../Mycontext'
 
 
-
-
 const Home = () => {
-
 
 const {Ws , setWs,client_id,setClient_id,room_id,setRoom_id} = useAppContext()
 
@@ -27,12 +24,10 @@ const navigate = useNavigate()
       const parsedMessage = JSON.parse(newMessage)
       if (parsedMessage.method === "connect") {
         setClient_id(parsedMessage.id);
-        console.log(parsedMessage.id);
       }
 
       if (parsedMessage.method === "create") {
         setRoom_id(parsedMessage.room_id);
-        console.log(parsedMessage?.room_id);
         navigate(`/draw/${parsedMessage?.room_id}`)
       }
 
