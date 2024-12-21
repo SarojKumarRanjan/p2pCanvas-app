@@ -1,4 +1,4 @@
-import { server as WebSocketServer } from 'webSocket';
+import {server as WebSocketServer} from "websocket"
 import { gid } from './utils/helper.js';
 
 const clients = {}
