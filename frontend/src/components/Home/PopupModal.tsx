@@ -10,27 +10,86 @@ import {
   import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { WebSocketService } from "@/services/WebSocketService";
+import { useAppContext } from "@/context/AppContext";
+
   
 
 function PopupModal({ children }: { children: React.ReactNode }) {
+
+  const {setWs,client_id,setClientId,room_id,setRoomId} = useAppContext();
  
     const navigate = useNavigate();
-  const [roomId, setRoomId] = useState('');
 
-  const createRoom = () => {
-    const newRoomId = Math.random().toString(36).substring(7);
-    navigate(`/room/${newRoomId}`);
-  };
+    const webSocketService = WebSocketService.getInstance();
 
-  const joinRoom = () => {
-    if (!roomId.trim()) {
-      toast.error('Please enter a room ID');
-      return;
+    useEffect(() => {
+      const initializedWebsocket = async () => {
+        try {
+          const websocket = await webSocketService.connect("ws://localhost:4444");
+          setWs(websocket);
+
+          websocket.onmessage = (event) => {
+            const message = JSON.parse(event.data) ;
+            switch (message.method) {
+              case "connect":
+                setClientId(message.id);
+                console.log("Connected to websocket server "+message.id);
+                
+                break;
+              case "create":
+                setRoomId(message.room_id);
+                navigate(`/room/${message.room_id}`);
+                break;
+              case "join":
+                navigate(`/room/${message.room_data.id}`);
+                break;
+              case "error":
+                toast.error(message.message);
+                break;
+              default:
+                break;
+            }
+          }
+
+
+          
+        } catch (error) {
+          toast.error("Error initializing websocket");
+          console.error("Error initializing websocket", error);
+          
+        }
+      }
+
+      initializedWebsocket();
+
+
+    
+
+
+    },[])
+
+    const joinRoom = () => {
+      if(room_id){
+        webSocketService.send({
+          method: "join",
+          id: client_id,
+          room_id: room_id
+        })
+      } else {
+        toast.error("Please enter a room ID");
+      }
     }
-    navigate(`/room/${roomId}`);
-  };
+
+
+    const createRoom = () => {
+      webSocketService.send({
+        "method": "create",
+        "id": client_id
+      })
+    }
 
   return (
     <Dialog>
@@ -47,7 +106,7 @@ function PopupModal({ children }: { children: React.ReactNode }) {
             <Label htmlFor="roomId">Room ID</Label>
             <Input
               id="roomId"
-              value={roomId}
+              value={room_id}
               onChange={(e) => setRoomId(e.target.value)}
               placeholder="Enter room ID to join"
             />
@@ -68,5 +127,6 @@ function PopupModal({ children }: { children: React.ReactNode }) {
     </Dialog>
   )
 }
+
 
 export default PopupModal

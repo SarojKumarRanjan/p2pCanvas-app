@@ -1,10 +1,18 @@
-import HomePage from "./pages/HomePage"
+
+import { AppContextProvider } from "./context/AppContext"
+import { Outlet } from "react-router-dom"
+
+
 function App() {
-  
+
+ 
 
   return (
     <>
-     <HomePage /> 
+      <AppContextProvider>
+        <Outlet />
+      </AppContextProvider>
+     
     </>
   )
 }
