@@ -1,6 +1,6 @@
 import http from 'http';
 import app from './app.js';
-import { setupWebSocket } from './websocket.js';
+import { setupWebSocket } from '../src/websocket.js';
 
 const PORT = process.env.PORT || 4444;
 const httpServer = http.createServer(app);

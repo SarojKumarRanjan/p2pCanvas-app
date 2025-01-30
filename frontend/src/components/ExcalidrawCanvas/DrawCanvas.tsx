@@ -1,6 +1,7 @@
 import  { useState, useEffect, useRef } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw';
-import { useAppContext } from '../Mycontext';
+import { useAppContext } from '@/context/AppContext';
+
 
 const ExcalidrawCanvas = () => {
   const UserStream = useRef()
@@ -9,13 +10,15 @@ const ExcalidrawCanvas = () => {
    const peerRef = useRef()
 const [callUserId, setCallUserId] = useState([]); 
   const [excalidrawAPI1, setExcalidrawAPI1] = useState(null)
-  const { Ws, client_id, setClient_id, room_id } = useAppContext()
+  const { ws, client_id, room_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
   const [intervalId, setIntervalId] = useState(null);
   const [videos, setVideos] = useState([]);
+
   let m = 1;
-  let payload;
-  let sceneData2
+  let payload:any;
+  let sceneData2:any;
+  const Ws = ws;
 
   useEffect(() => {
     
@@ -125,6 +128,9 @@ const [callUserId, setCallUserId] = useState([]);
         "target": id,
         "candidate": e.candidate
       }
+
+
+
      
       
 
@@ -133,6 +139,8 @@ const [callUserId, setCallUserId] = useState([]);
       }
     }
   }
+
+
 
   const HandleIceCandidateMsg = (incoming) => {
     const candidate = new RTCIceCandidate(incoming.candidate)
@@ -281,46 +289,54 @@ console.log(parsedMessage);
     }
   };
 
-  return (
-    <>
-   
-      <div onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{ height: "500px", width: "500px", display: "inline-block" }}>
-        <p style={{ fontSize: "16px" }}>Excalidraw 1</p>
 
-        <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI1(api)} />
+
+
+
+
+  return (
+    <div className="flex h-screen w-full p-4 gap-4">
+      <div className="w-3/4 h-full">
+        <div 
+          className="h-full w-full border rounded-lg overflow-hidden"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <Excalidraw excalidrawAPI={(api) => setExcalidrawAPI1(api)} />
+        </div>
       </div>
 
-      <div><video autoPlay ref={userVideo} ></video>my</div>
-      
-      <div>
-      {console.log("Checking partnerVideo.current:", partnerVideo.current)} {/* Logs the content of partnerVideo.current */}
-      {console.log("Checking if map is being called")} 
-    Their video
-    {Object.keys(partnerVideo.current).map((id,index) => {
-       console.log("Inside map, processing streamObject:", id);
-     return (<video
-        key={index}
-        autoPlay
+      <div className="w-1/4 flex flex-col gap-4">
+        <div className="w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+          <video 
+            autoPlay 
+            ref={userVideo}
+            muted
+            className="w-full h-full object-cover"
+          />
+        </div>
         
-        ref={(videoElement) => {
-          if (videoElement && id) {
-            videoElement.srcObject = partnerVideo.current[id]; // Set srcObject
-            videoElement.play().catch((error) => {
-              console.error('Error playing video:', error);
-            });
-          }
-        }}
-        
-        
-        style={{ width: '300px', height: '200px', margin: '10px' }}
-      /> )
-})}
-  </div>
-
-    </>
-  )
+        <div className="flex flex-col gap-2">
+          {Object.keys(partnerVideo.current).map((id, index) => (
+            <div key={index} className="w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
+              <video
+                autoPlay
+                ref={(videoElement) => {
+                  if (videoElement && id) {
+                    videoElement.srcObject = partnerVideo.current[id];
+                    videoElement.play().catch((error) => {
+                      console.error('Error playing video:', error);
+                    });
+                  }
+                }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default ExcalidrawCanvas

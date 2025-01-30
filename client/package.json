@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "proxy":"http://localhost:5173/",
+  "proxy": "http://localhost:5173/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -13,7 +13,8 @@
   "dependencies": {
     "@excalidraw/excalidraw": "^0.17.6",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

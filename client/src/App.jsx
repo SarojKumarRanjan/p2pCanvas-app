@@ -1,4 +1,4 @@
-import react from "react"
+
 import Home from "./pages/Home";
 import ExcalidrawCanvas from "./pages/Excalidraw";
 import { createBrowserRouter } from "react-router-dom"
