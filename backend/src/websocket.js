@@ -16,7 +16,7 @@ export const setupWebSocket = (httpServer) => {
 
         connection.on('open', () => console.log('Connection opened'));
         connection.on('close', () => console.log('Connection closed'));
-        connection.on('message', (message) => {
+        connection.on('message', (message) => { 
             const receivedData = JSON.parse(message.utf8Data);
 
             if (receivedData.method === 'create') {
