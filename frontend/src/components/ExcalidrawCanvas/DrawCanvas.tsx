@@ -1,24 +1,34 @@
 import  { useState, useEffect, useRef } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw';
+
+
 import { useAppContext } from '@/context/AppContext';
+import { log } from 'util';
 
 
 const ExcalidrawCanvas = () => {
-  const UserStream = useRef()
-  const partnerVideo = useRef([]);
-  const userVideo = useRef();
-   const peerRef = useRef()
-const [callUserId, setCallUserId] = useState([]); 
-  const [excalidrawAPI1, setExcalidrawAPI1] = useState(null)
+  
+  const UserStream = useRef<MediaStream>();
+  // const partnerVideo = useRef<HTMLVideoElement[]>([]);
+  const partnerVideo = useRef<{ [key: string]: MediaStream | null }>({});
+
+  const userVideo = useRef<HTMLVideoElement | null>(null);
+ 
+   const peerRef = useRef<RTCPeerConnection>()
+
+const [callUserId, setCallUserId] = useState<string[]>([]);
+
+  const [excalidrawAPI1, setExcalidrawAPI1] = useState<any>(null)
   const { ws, client_id, room_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
-  const [videos, setVideos] = useState([]);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+
+  const [videos, setVideos] = useState<string[]>([]);
 
   let m = 1;
   let payload:any;
   let sceneData2:any;
-  const Ws = ws;
+  
 
   useEffect(() => {
     
@@ -26,7 +36,7 @@ const [callUserId, setCallUserId] = useState([]);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         UserStream.current = stream;
-        userVideo.current.srcObject = stream;
+        userVideo.current!.srcObject = stream;
         setIsStreamReady(true); 
      
      
@@ -36,6 +46,13 @@ const [callUserId, setCallUserId] = useState([]);
         console.error('Error accessing media devices:', error);
       }
     };
+
+    const payload = {
+      "method":"who_joined"
+    }
+    console.log("trying to send data");
+    
+    ws?.send(JSON.stringify(payload))
   
     initUserStream();
   }, []);
@@ -48,13 +65,13 @@ const [callUserId, setCallUserId] = useState([]);
     }
   }, [isStreamReady, callUserId]);
   
-  const initiateCallUser = (id) => {
-    setCallUserId(id);
+  const initiateCallUser = (idArray : string[]) => {
+    setCallUserId(idArray  );
   };
 
-  const callUser = (id) => {
+  const callUser = (id:string) => {
     peerRef.current = createPeer(id)
-    UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current)
+    UserStream.current!.getTracks().forEach(track => peerRef.current!.addTrack(track, UserStream.current!)
     );
     
     
@@ -64,7 +81,7 @@ const [callUserId, setCallUserId] = useState([]);
     
   }
 
-  const createPeer = (id) => {
+  const createPeer = (id :string) => {
     const peer = new RTCPeerConnection({
       iceServers: [
         {
@@ -83,45 +100,49 @@ const [callUserId, setCallUserId] = useState([]);
     return peer;
   }
 
-  const HandleNegotiationNeededEvent = (id) => {
-    peerRef.current.createOffer().then(offer => {
-      return peerRef.current.setLocalDescription(offer);
-    }).then(() => {
-      const payload = {
-        "method": "offer",
-        "target": id,
-        "caller": client_id,
-        "sdp": peerRef.current.localDescription
-      }
-      Ws.send(JSON.stringify(payload))
-    }).catch(e => console.log(e))
+  const HandleNegotiationNeededEvent = (id :string) => {
+  if (peerRef.current) {
+      peerRef.current.createOffer().then(offer => {
+       if (peerRef.current) {
+         return peerRef.current.setLocalDescription(offer);
+       }
+      }).then(() => {
+        const payload = {
+          "method": "offer",
+          "target": id,
+          "caller": client_id,
+          "sdp": peerRef.current!.localDescription
+        }
+        ws?.send(JSON.stringify(payload))
+      }).catch(e => console.log(e))
+  }
   }
 
-  const HandleRecieveCall = (incoming) => {
+  const HandleRecieveCall = (incoming :any) => {
   peerRef.current = createPeer(incoming.caller)
     const desc = new RTCSessionDescription(incoming.sdp)
     peerRef.current.setRemoteDescription(desc).then(() => {
-        UserStream.current.getTracks().forEach(track => peerRef.current.addTrack(track, UserStream.current))
+        UserStream.current!.getTracks().forEach(track => peerRef.current!.addTrack(track, UserStream.current!))
     }).then(() => {
-      return peerRef.current.createAnswer()
+      return peerRef.current!.createAnswer()
     }).then(answer => {
-      return peerRef.current.setLocalDescription(answer)
+      return peerRef.current!.setLocalDescription(answer)
     }).then(() => {
       const payload = {
         "method": "answer",
         "target": incoming.caller,
-        "sdp": peerRef.current.localDescription
+        "sdp": peerRef.current!.localDescription
       }
-      Ws.send(JSON.stringify(payload))
+      ws?.send(JSON.stringify(payload))
     })
   }
 
-  const HandleAnswer = (incoming) => {
+  const HandleAnswer = (incoming :any) => {
     const desc = new RTCSessionDescription(incoming.sdp);
-    peerRef.current.setRemoteDescription(desc).catch(e => console.log(e))
+    peerRef.current!.setRemoteDescription(desc).catch(e => console.log(e))
   }
 
-  const HandleIceCandidateEvent = (e,id) => {
+  const HandleIceCandidateEvent = (e: RTCPeerConnectionIceEvent,id :string) => {
     if (e.candidate) {
       const payload = {
         "method": "ice-candidate",
@@ -135,14 +156,14 @@ const [callUserId, setCallUserId] = useState([]);
       
 
       if (payload.target) {
-        Ws.send(JSON.stringify(payload))
+        ws?.send(JSON.stringify(payload))
       }
     }
   }
 
 
 
-  const HandleIceCandidateMsg = (incoming) => {
+  const HandleIceCandidateMsg = (incoming :any) => {
     const candidate = new RTCIceCandidate(incoming.candidate)
     if (peerRef.current) {
     peerRef.current.addIceCandidate(candidate).catch(e => console.log(e)
@@ -150,24 +171,33 @@ const [callUserId, setCallUserId] = useState([]);
   }
 
 
-  const HandleTrackEvent = (e,id) => {
+  const HandleTrackEvent = (e :RTCTrackEvent,id :string) => {
     partnerVideo.current[id] = e.streams[0];
-    setVideos(...videos , id)
+    setVideos((prev) =>[...prev , id])
   }
   
-  const all_video_setup = (id_array )=>{
+  const all_video_setup = (id_array : string[]  )=>{
     if (!isStreamReady) {
       initiateCallUser(id_array)
+      console.log(id_array);
+      console.log("logging whole array");
+      
       console.warn("User stream is not ready yet.");
       return; 
     }
     
     
-    function callWithDelay(index) {
+    
+    
+    function callWithDelay(index : number) {
       if (index >= id_array.length) return;
 
       const element = id_array[index];
-      callUser(element.id);
+      console.log(element);
+      console.log("logging singk element");
+      
+      
+      callUser(element);
 
       setTimeout(() => {
         callWithDelay(index + 1);
@@ -176,20 +206,23 @@ const [callUserId, setCallUserId] = useState([]);
     callWithDelay(0)
     }
     
-Ws.onmessage = (event) => {
+ws!.onmessage = (event) => {
     const newMessage = event.data;
     const parsedMessage = JSON.parse(newMessage)
-console.log(parsedMessage);
+console.log(parsedMessage.method);
 
 
     if (parsedMessage.method === "user_joined") {
+      
       const id = parsedMessage.joined_user_id
+      console.log(id);
+      
        all_video_setup(id)
     }
 
-    if (parsedMessage.method === "join") {
-      console.log(parsedMessage?.room_data?.id + "ahahhaha");
-}
+//     if (parsedMessage.method === "join") {
+//       console.log(parsedMessage?.room_data?.id + "ahahhaha");
+// }
     
     if (parsedMessage.method === "offer") {
       HandleRecieveCall(parsedMessage)
@@ -249,7 +282,7 @@ console.log(parsedMessage);
       m = 2;
       console.log("applying once");
       if (payload) {
-        Ws.send(JSON.stringify(payload))
+        ws?.send(JSON.stringify(payload))
         console.log("sending data");
       }
 
@@ -265,7 +298,7 @@ console.log(parsedMessage);
         }
         console.log("applying second times");
         if (payload) {
-          Ws.send(JSON.stringify(payload))
+          ws?.send(JSON.stringify(payload))
           console.log("sending data");
         }
 
@@ -275,7 +308,7 @@ console.log(parsedMessage);
 
   const handleMouseEnter = () => {
 
-    const id = setInterval(() => {
+    const id  = setInterval(() => {
       getSceneData();
     }, 350);
     setIntervalId(id);
@@ -310,7 +343,7 @@ console.log(parsedMessage);
         <div className="w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
           <video 
             autoPlay 
-            ref={userVideo}
+            ref ={userVideo}
             muted
             className="w-full h-full object-cover"
           />

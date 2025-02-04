@@ -33,6 +33,11 @@ const [callUserId, setCallUserId] = useState([]);
         console.error('Error accessing media devices:', error);
       }
     };
+
+    const payload = {
+      "method":"who_joined"
+    }
+    Ws.send(JSON.stringify(payload))
   
     initUserStream();
   }, []);
@@ -80,19 +85,7 @@ const [callUserId, setCallUserId] = useState([]);
     return peer;
   }
 
-  const HandleNegotiationNeededEvent = (id) => {
-    peerRef.current.createOffer().then(offer => {
-      return peerRef.current.setLocalDescription(offer);
-    }).then(() => {
-      const payload = {
-        "method": "offer",
-        "target": id,
-        "caller": client_id,
-        "sdp": peerRef.current.localDescription
-      }
-      Ws.send(JSON.stringify(payload))
-    }).catch(e => console.log(e))
-  }
+  
 
   const HandleRecieveCall = (incoming) => {
   peerRef.current = createPeer(incoming.caller)
@@ -159,7 +152,7 @@ const [callUserId, setCallUserId] = useState([]);
       if (index >= id_array.length) return;
 
       const element = id_array[index];
-      callUser(element.id);
+       (element.id);
 
       setTimeout(() => {
         callWithDelay(index + 1);

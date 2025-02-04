@@ -37,7 +37,9 @@ initHandlers() {
                     this.handleJoinRoom(receivedData);
                 break;
                 case "who_joined":
-                    this.handleuserJoinRoom(receivedData);
+                    console.log("bakend logging");
+                    
+                    this.handleuserJoinRoom();
                 break;
                 case "state":
                     this.handleStateData(receivedData);
@@ -129,14 +131,17 @@ console.log(RoomManager.getinstance().roomData.get(this.room_id)?.length);
     
 };
 
-handleuserJoinRoom(receivedData :any){
-    const id_data = RoomManager.getinstance().roomData.get(this.room_id)?.client.filter(element=>element.id!== this.id)
+handleuserJoinRoom(){
+    const id_data = RoomManager.getinstance().roomData.get(this.room_id)?.client.filter(element=>element.id!== this.id).map(element => element.id)
+console.log(id_data);
 
         const payload_for_join = {
             "method" : "user_joined",
             "joined_user_id": id_data 
         }
-    
+        console.log(payload_for_join);
+        
+    this.send(payload_for_join)
     
 }
 

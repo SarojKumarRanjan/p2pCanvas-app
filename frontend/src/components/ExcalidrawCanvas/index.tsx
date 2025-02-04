@@ -13,7 +13,7 @@ const ExcalidrawCanvas: React.FC = () => {
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   
   const userStreamRef = useRef<MediaStream>();
-  const { clientId, roomId } = useAppContext();
+  let { client_id,  room_id } = useAppContext();
   
   const rtcService = RTCService.getInstance();
   const wsService = WebSocketService.getInstance();
@@ -32,6 +32,11 @@ const ExcalidrawCanvas: React.FC = () => {
       }
     };
 
+    wsService.send({
+      "method":"who_joined"
+    });
+
+
     initUserStream();
 
   
@@ -47,6 +52,29 @@ const ExcalidrawCanvas: React.FC = () => {
     }
   };
 
+  const HandleIceCandidateMsg = (incoming : any) => {
+    const candidate = new RTCIceCandidate(incoming.candidate)
+    const peer = rtcService.getPeerConnection(client_id);
+    if (peer) {
+    peer.addIceCandidate(candidate).catch(e => console.log(e)
+    )}
+  }
+
+  const HandleNegotiationNeededEvent = (id :string) => {
+    const peer = rtcService.getPeerConnection(id);
+    peer?.createOffer().then(offer => {
+      return peer.setLocalDescription(offer);
+    }).then(() => {
+
+      wsService.send({
+        "method": "offer",
+        "target": id,
+        "caller": client_id,
+        "sdp": peer.localDescription
+      });
+  
+    }).catch(e => console.log(e))
+  }
   const handleTrackEvent = (e: RTCTrackEvent, id: string) => {
     setRemoteStreams(prev => new Map(prev).set(id, e.streams[0]));
   };
@@ -62,7 +90,7 @@ const ExcalidrawCanvas: React.FC = () => {
         handleAnswer(message);
         break;
       case 'ice-candidate':
-        handleIceCandidate(message);
+        HandleIceCandidateMsg(message);
         break;
       case 'update':
         handleExcalidrawUpdate(message);
@@ -76,7 +104,8 @@ const ExcalidrawCanvas: React.FC = () => {
     const peer = rtcService.createPeerConnection(
       message.caller,
       handleIceCandidate,
-      handleTrackEvent
+      handleTrackEvent,
+      HandleNegotiationNeededEvent
     );
 
     await peer.setRemoteDescription(new RTCSessionDescription(message.sdp));
@@ -124,8 +153,8 @@ const ExcalidrawCanvas: React.FC = () => {
     wsService.send({
       method: 'state',
       state: { elements, appState },
-      room_id: roomId,
-      owner: clientId
+      room_id: room_id,
+      owner: client_id
     });
   };
 
