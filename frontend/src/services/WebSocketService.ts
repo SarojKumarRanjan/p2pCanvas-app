@@ -17,11 +17,11 @@ export class WebSocketService {
 
     // initiate the websocket connection
     public static getInstance(): WebSocketService {
-        if (!WebSocketService.instance) {
-            WebSocketService.instance = new WebSocketService();
+        if (!this.instance) {
+            this.instance = new WebSocketService();
         }
 
-        return WebSocketService.instance;
+        return this.instance;
     }
 
     //webSocket connection 

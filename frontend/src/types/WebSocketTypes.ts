@@ -2,7 +2,8 @@ export type WebSocketMessage =
   | ConnectMessage
   | CreateRoomMessage
   | JoinRoomMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | any ;
 
 export interface ConnectMessage {
   method: 'connect';

@@ -40,6 +40,8 @@ function PopupModal({ children }: { children: React.ReactNode }) {
                 
                 break;
               case "create":
+                console.log(message.room_id);
+                
                 setRoomId(message.room_id);
                 navigate(`/room/${message.room_id}`);
                 break;
