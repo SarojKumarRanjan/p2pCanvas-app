@@ -3,14 +3,14 @@ import { Excalidraw } from '@excalidraw/excalidraw';
 
 
 import { useAppContext } from '@/context/AppContext';
-import { log } from 'util';
+
 
 
 const ExcalidrawCanvas = () => {
   
   const UserStream = useRef<MediaStream>();
   // const partnerVideo = useRef<HTMLVideoElement[]>([]);
-  const partnerVideo = useRef<{ [key: string]: MediaStream | null }>({});
+  const partnerVideo = useRef<{ [id: string]: MediaStream | null }>({});
 
   const userVideo = useRef<HTMLVideoElement | null>(null);
  
@@ -137,6 +137,11 @@ const [callUserId, setCallUserId] = useState<string[]>([]);
     })
   }
 
+
+  const HandleUserLeft = (parsedMessage :any) =>{
+delete partnerVideo.current[parsedMessage.id]
+setVideos(parsedMessage.id)
+  }
   const HandleAnswer = (incoming :any) => {
     const desc = new RTCSessionDescription(incoming.sdp);
     peerRef.current!.setRemoteDescription(desc).catch(e => console.log(e))
@@ -205,7 +210,18 @@ const [callUserId, setCallUserId] = useState<string[]>([]);
     }
     callWithDelay(0)
     }
-    
+   
+ws!.onclose = () => {
+  if (ws!.readyState === WebSocket.OPEN) {
+    const payload = {
+      "method": "user_left",
+      
+    }
+    ws?.send(JSON.stringify(payload))
+  }
+ 
+};
+
 ws!.onmessage = (event) => {
     const newMessage = event.data;
     const parsedMessage = JSON.parse(newMessage)
@@ -237,7 +253,15 @@ console.log(parsedMessage.method);
     if (parsedMessage.method === "ice-candidate") {
       HandleIceCandidateMsg(parsedMessage)
       console.log("giving ice");
+    
+    }
+    
+    if (parsedMessage.method === "user_left") {
+      console.log("someone left");
       
+      HandleUserLeft(parsedMessage)
+      
+    
     }
     if (parsedMessage.method === "update") {
       const sceneData1 = parsedMessage.state

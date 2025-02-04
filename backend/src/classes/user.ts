@@ -41,6 +41,12 @@ initHandlers() {
                     
                     this.handleuserJoinRoom();
                 break;
+              
+                case "user_left":
+                    console.log("user left called");
+                    
+                    this.handleuserLeft();
+                break;
                 case "state":
                     this.handleStateData(receivedData);
                 break;
@@ -72,12 +78,27 @@ destroy(){
         roomData?.client.filter(user=>user.id!==this.id)
         roomData.length = roomData?.client?.length
     }
+
+    const payload = {
+        "method":"user_left",
+        "id":this.id
+    }
+      roomData?.client.filter(client_id => client_id.id !== roomData?.stateData?.owner).forEach(client_id => {
+
+        RoomManager.getinstance().findClient(this.room_id,client_id.id)?.send(payload)
+           
+        });
+    
     if(roomData?.length == 0){
         RoomManager.getinstance().removeRoom(this.room_id)
     
     }
     
     // destroy webrtc too
+}
+
+handleuserLeft(){
+    this.destroy()
 }
 
 handleCreateRoom (){
