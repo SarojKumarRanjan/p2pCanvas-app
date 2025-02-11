@@ -7,7 +7,6 @@ import { createBrowserRouter,RouterProvider } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import HomePage from './pages/HomePage.tsx'
 
-import ExcalidrawCanvas from '../src/components/ExcalidrawCanvas/index.tsx';
 
 import DrawCanvas from './components/ExcalidrawCanvas/DrawCanvas.tsx'
 
