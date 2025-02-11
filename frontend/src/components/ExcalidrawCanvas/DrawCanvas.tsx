@@ -3,6 +3,7 @@ import { Excalidraw } from '@excalidraw/excalidraw';
 
 
 import { useAppContext } from '@/context/AppContext';
+import { WebSocketService } from '@/services/WebSocketService';
 
 
 
@@ -15,13 +16,13 @@ const ExcalidrawCanvas = () => {
   const userVideo = useRef<HTMLVideoElement | null>(null);
  
    const peerRef = useRef<RTCPeerConnection>()
-
+   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 const [callUserId, setCallUserId] = useState<string[]>([]);
 
   const [excalidrawAPI1, setExcalidrawAPI1] = useState<any>(null)
   const { ws, client_id, room_id } = useAppContext()
   const [isStreamReady, setIsStreamReady] = useState(false);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  // const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   const [videos, setVideos] = useState<string[]>([]);
 
@@ -53,8 +54,26 @@ const [callUserId, setCallUserId] = useState<string[]>([]);
     console.log("trying to send data");
     
     ws?.send(JSON.stringify(payload))
+
+  //   window.addEventListener("load", () => {
+  //     const wsService = WebSocketService.getInstance();
+  //     const isConnected = localStorage.getItem("ws-connected");
+  
+  //     if (isConnected) {
+  //         wsService.connect();
+  //     }
+  // });
+  
   
     initUserStream();
+    return ()=>{
+      if(intervalRef.current){
+        clearInterval(intervalRef.current)
+      }
+      if(ws){
+WebSocketService.getInstance().disconnect()
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -331,18 +350,17 @@ console.log(parsedMessage.method);
   };
 
   const handleMouseEnter = () => {
-
-    const id  = setInterval(() => {
-      getSceneData();
-    }, 350);
-    setIntervalId(id);
-
+    if (!intervalRef.current) {
+      intervalRef.current = setInterval(() => {
+        getSceneData();
+      }, 350);
+    }
   };
 
   const handleMouseLeave = () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      setIntervalId(null);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   };
 
@@ -377,7 +395,7 @@ console.log(parsedMessage.method);
           {Object.keys(partnerVideo.current).map((id, index) => (
             <div key={index} className="w-full aspect-video bg-gray-100 rounded-lg overflow-hidden">
               <video
-                autoPlay
+              
                 ref={(videoElement) => {
                   if (videoElement && id) {
                     videoElement.srcObject = partnerVideo.current[id];
