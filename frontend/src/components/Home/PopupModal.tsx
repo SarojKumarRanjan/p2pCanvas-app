@@ -10,87 +10,91 @@ import {
   import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { WebSocketService } from "@/services/WebSocketService";
 import { useAppContext } from "@/context/AppContext";
-
+import axios from 'axios'
   
 
 function PopupModal({ children }: { children: React.ReactNode }) {
 
-  const {setWs,client_id,setClientId,room_id,setRoomId} = useAppContext();
- 
+  // const {setWs,client_id,setClientId,room_id,setRoomId} = useAppContext();
+  const [room_id,setRoomId]=useState<string>("")
     const navigate = useNavigate();
 
-    const webSocketService = WebSocketService.getInstance();
+    // const webSocketService = WebSocketService.getInstance();
 
-    useEffect(() => {
-      const initializedWebsocket = async () => {
-        try {
-          const websocket = await webSocketService.connect("ws://localhost:4444");
-          setWs(websocket);
+    // useEffect(() => {
+    //   const initializedWebsocket = async () => {
+    //     try {
+    //       const websocket = await webSocketService.connect("ws://localhost:4444");
+    //       setWs(websocket);
 
-          websocket.onmessage = (event) => {
-            const message = JSON.parse(event.data) ;
-            switch (message.method) {
-              case "connect":
-                setClientId(message.id);
-                console.log("Connected to websocket server "+message.id);
+    //       websocket.onmessage = (event) => {
+    //         const message = JSON.parse(event.data) ;
+    //         switch (message.method) {
+    //           case "connect":
+    //             setClientId(message.id);
+    //             console.log("Connected to websocket server "+message.id);
                 
-                break;
-              case "create":
-                console.log(message.room_id);
+    //             break;
+    //           case "create":
+    //             console.log(message.room_id);
                 
-                setRoomId(message.room_id);
-                navigate(`/room/${message.room_id}`);
-                break;
-              case "join":
-                navigate(`/room/${message.room_data.id}`);
-                break;
-              case "error":
-                toast.error(message.message);
-                break;
-              default:
-                break;
-            }
-          }
+    //             setRoomId(message.room_id);
+    //             navigate(`/room/${message.room_id}`);
+    //             break;
+    //           case "join":
+    //             navigate(`/room/${message.room_data.id}`);
+    //             break;
+    //           case "error":
+    //             toast.error(message.message);
+    //             break;
+    //           default:
+    //             break;
+    //         }
+    //       }
 
 
           
-        } catch (error) {
-          toast.error("Error initializing websocket");
-          console.error("Error initializing websocket", error);
+    //     } catch (error) {
+    //       toast.error("Error initializing websocket");
+    //       console.error("Error initializing websocket", error);
           
-        }
-      }
+    //     }
+    //   }
 
-      initializedWebsocket();
+    //   initializedWebsocket();
 
 
     
 
 
-    },[])
+    // },[])
 
     const joinRoom = () => {
       if(room_id){
-        webSocketService.send({
-          method: "join",
-          id: client_id,
-          room_id: room_id
-        })
+        // webSocketService.send({
+        //   method: "join",
+        //   id: client_id,
+        //   room_id: room_id
+        // })
+        navigate(`/room/${room_id}`);
       } else {
         toast.error("Please enter a room ID");
       }
     }
 
 
-    const createRoom = () => {
-      webSocketService.send({
-        "method": "create",
-        "id": client_id
-      })
+    const createRoom = async() => {
+      // webSocketService.send({
+      //   "method": "create",
+      //   "id": client_id
+      // })
+     const res = await axios.get('http://localhost:4445/generate')
+     navigate(`/room/${res.data.id}`);
+
     }
 
   return (
