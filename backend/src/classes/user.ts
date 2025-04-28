@@ -22,32 +22,25 @@ getid(){
 initHandlers() {
     this.ws.on("message", async (data) => {
         const receivedData = JSON.parse(data.toString())
-        console.log(receivedData.method);
+    
         
         switch (receivedData.method) {
-            case "create":
-
-                console.log("create room called");
-                
-                this.handleCreateRoom();
-                break;
+           
                 case "join":
-                    console.log("join room called");
+                    
                     
                     this.handleJoinRoom(receivedData);
                 break;
                 case "who_joined":
-                    console.log("bakend logging");
+                    
                     
                     this.handleuserJoinRoom();
                 break;
               
-                case "user_left":
-                    console.log("user left called");
-                    
-                    this.handleuserLeft();
-                break;
+               
                 case "state":
+                    
+                    
                     this.handleStateData(receivedData);
                 break;
                 case "offer":
@@ -74,22 +67,28 @@ send(payload : any){
 
 destroy(){
    let roomData =  RoomManager.getinstance().roomData.get(this.room_id)
+ 
+   
     if (roomData) {
-        roomData?.client.filter(user=>user.id!==this.id)
-        roomData.length = roomData?.client?.length
+        roomData.client = roomData?.client.filter(user=>user.id!==this.id)
+    
     }
+    
+console.log(roomData);
 
     const payload = {
         "method":"user_left",
         "id":this.id
     }
-      roomData?.client.filter(client_id => client_id.id !== roomData?.stateData?.owner).forEach(client_id => {
+      roomData?.client.forEach(client_id => {
 
         RoomManager.getinstance().findClient(this.room_id,client_id.id)?.send(payload)
            
         });
     
-    if(roomData?.length == 0){
+    if(roomData?.client.length === 0){
+        console.log(roomData.client.length);
+        
         RoomManager.getinstance().removeRoom(this.room_id)
     
     }
@@ -97,46 +96,49 @@ destroy(){
     // destroy webrtc too
 }
 
-handleuserLeft(){
-    this.destroy()
-}
+// handleuserLeft(){
+//     this.destroy()
+// }
 
-handleCreateRoom (){
+// handleCreateRoom (){
    
-    this.room_id = gid()
-    let owner = RoomManager.getinstance().roomData.get(this.room_id)?.owner
-    owner = this.id
-    RoomManager.getinstance().addUser(this.room_id,this)
+//     this.room_id = gid()
+//     let owner = RoomManager.getinstance().roomData.get(this.room_id)?.owner
+//     owner = this.id
+//     RoomManager.getinstance().addUser(this.room_id,this)
   
     
   
 
-    const payload = {
-        "method": "create",
-        "room_id": this.room_id,
-    }
+//     const payload = {
+//         "method": "create",
+//         "room_id": this.room_id,
+//     }
 
-    this.send(payload)
+//     this.send(payload)
 
-};
+// };
 
 handleJoinRoom (received_Data : any) {
     
+  
    
     
-this.id = received_Data.id
+
 this.room_id = received_Data.room_id
-console.log(RoomManager.getinstance().roomData.get(this.room_id)?.length);
     if ((RoomManager.getinstance().roomData.get(this.room_id)?.client.length ?? 0) >= 6) {
         return console.log("not able to join");
 
     }
 
    
-   RoomManager.getinstance().addUser(this.room_id, this)    
+   RoomManager.getinstance().addUser(this.room_id, this) 
+
+      
 
 
     if (RoomManager.getinstance().roomData.get(this.room_id)?.length ?? 0 > 1) this.updateRoomState(this.room_id,this.cond)
+        console.log(RoomManager.getinstance().roomData.get(this.room_id)?.length);
         
         const room_data = RoomManager.getinstance().roomData.get(this.room_id)
     const payload = {
@@ -149,18 +151,22 @@ console.log(RoomManager.getinstance().roomData.get(this.room_id)?.length);
  
     
     this.send(payload)
+   
+    
     
 };
 
 handleuserJoinRoom(){
     const id_data = RoomManager.getinstance().roomData.get(this.room_id)?.client.filter(element=>element.id!== this.id).map(element => element.id)
-console.log(id_data);
+
 
         const payload_for_join = {
             "method" : "user_joined",
             "joined_user_id": id_data 
         }
-        console.log(payload_for_join);
+       
+       console.log(id_data);
+       
         
     this.send(payload_for_join)
     
@@ -168,12 +174,14 @@ console.log(id_data);
 
 handleStateData(received_Data :any) {
     
+    
     const state = received_Data.state;
     const data = RoomManager.getinstance().roomData.get(this.room_id)
     if (data&& data.stateData) {
         data.stateData.state  = state
         data.stateData.owner = this.id
     }
+  
   
 
 };
@@ -220,73 +228,70 @@ handleReceievedCandidate (received_Data:any) {
 
 };
 
-updateRoomState(room_id :string,cond :boolean) {
-    const requiredData = RoomManager.getinstance().roomData.get(this.room_id)
-    if (cond == true) {
-        RoomManager.getinstance().roomState.set(this.room_id,requiredData?.stateData.state)
-      
-
-        
-        
-        if (requiredData?.stateData) {
-            const payload = {
-                "method": "update",
-                "room_id": this.room_id,
-                "state": requiredData?.stateData?.state
-            }
-
-
-
-            if (Array.isArray(requiredData?.client)) {
-                // console.log("updating state from backend ");
-
-              requiredData?.client.filter(client_id => client_id.id !== requiredData?.stateData?.owner).forEach(client_id => {
-
-                RoomManager.getinstance().findClient(this.room_id,client_id.id)?.send(payload)
-                   
-                });
-
-            }
-
-
-
-
-        }
-        this.cond = false
-       
+updateRoomState(room_id: string, cond: boolean) {
+    const requiredData = RoomManager.getinstance().roomData.get(room_id);
+    if (!requiredData) {
+        console.warn(`Room data not found for ${room_id}`);
+        return;
     }
-    else {
-        if (JSON.stringify(requiredData?.stateData.state) != JSON.stringify(RoomManager.getinstance().roomState.get(this.room_id))) {
-            if (requiredData?.stateData) {
-                const payload = {
-                    "method": "update",
-                    "room_id": this.room_id,
-                    "state": requiredData?.stateData?.state
+
+    // First-time broadcast buffer to ensure frontend catches it
+    if (cond === true) {
+        RoomManager.getinstance().roomState.set(room_id, requiredData.stateData?.state);
+
+        const payload = {
+            method: "update",
+            state: requiredData.stateData?.state
+        };
+
+        if (Array.isArray(requiredData.client)) {
+            // Repeat broadcast for 2.5 seconds (5 times every 500ms)
+            let count = 0;
+            const interval = setInterval(() => {
+                if (count >= 5) {
+                    clearInterval(interval);
+                    return;
                 }
 
-                if (Array.isArray(requiredData.client)) {
-                    // console.log("updating state from backend ");
-
-                    requiredData.client.filter(client_id => client_id.id !== requiredData?.stateData?.owner).forEach(client_id => {
-
-                        RoomManager.getinstance().findClient(this.room_id,client_id.id)?.send(payload)
-                    
-
+                requiredData.client
+                    .filter(client => client.id !== requiredData.stateData?.owner)
+                    .forEach(client => {
+                        RoomManager.getinstance().findClient(room_id, client.id)?.send(payload);
                     });
-                    RoomManager.getinstance().roomState.set(this.room_id,requiredData?.stateData.state)
-                }
 
+                count++;
+            }, 500);
+        }
 
+        this.cond = false;
+    } else {
+        // Regular updates if state has changed
+        if (
+            JSON.stringify(requiredData.stateData?.state) !==
+            JSON.stringify(RoomManager.getinstance().roomState.get(room_id))
+        ) {
+            const payload = {
+                method: "update",
+                room_id: room_id,
+                state: requiredData.stateData?.state
+            };
 
+            if (Array.isArray(requiredData.client)) {
+                requiredData.client
+                    .filter(client => client.id !== requiredData.stateData?.owner)
+                    .forEach(client => {
+                        RoomManager.getinstance().findClient(room_id, client.id)?.send(payload);
+                    });
 
+                RoomManager.getinstance().roomState.set(room_id, requiredData.stateData.state);
             }
-
-
         }
     }
 
-    setTimeout(() => this.updateRoomState(this.room_id,this.cond), 350);
+    // Re-check every 350ms
+    setTimeout(() => this.updateRoomState(room_id, this.cond), 350);
 }
+
 }
 
 

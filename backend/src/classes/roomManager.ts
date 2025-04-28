@@ -2,7 +2,7 @@
 
  import { User } from "./user"       
 interface rooms{
-    owner: string,
+    
     client : User[],
     stateData : {
         owner : string,
@@ -48,16 +48,17 @@ public addUser(roomId: string, user: User): void {
     if (!roomData) {
       
         roomData = {
-            owner: user.getid(),
             client: [],
             stateData: { owner: "", state: {} },
-            length: 0
+            get length(){
+                return this.client.length
+            }
         };
         this.roomData.set(roomId, roomData);
     }
 
     roomData.client.push(user);
-    roomData.length = roomData.client.length;
+
 }
 
    
