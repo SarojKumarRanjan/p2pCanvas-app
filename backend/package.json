@@ -4,23 +4,27 @@
   "description": "",
   "main": "server.js",
   "type": "module",
- 
   "scripts": {
-  "watch": "tsc --watch",
-  "dev": "npm run watch & nodemon dist/server.js",
-  "start": "node dist/server.js"
-},
-
+    "watch": "tsc --watch",
+    "dev": "npm run watch & nodemon dist/server.js & nodemon dist/app.js",
+    "start": "node dist/server.js & node dist/app.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
     "express": "^4.21.1",
+    "ioredis": "^5.6.1",
     "websocket": "^1.0.35",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.0",
+    "@types/ioredis": "^4.28.10",
     "@types/node": "^22.12.0",
     "@types/react": "^19.0.8",
     "@types/websocket": "^1.0.10",
