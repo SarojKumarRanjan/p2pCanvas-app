@@ -11,7 +11,7 @@ import { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types/types';
 
 const ExcalidrawCanvas = () => {
 
-  const { id } = useParams(),
+  const { id } = useParams()
   const webSocketService = WebSocketService.getInstance();
   const excalidrawAPI1 = useRef<null|ExcalidrawImperativeAPI>(null);
   const [startkru, setstartkru] = useState<boolean | null>(null);
