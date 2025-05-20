@@ -8,7 +8,7 @@ import { WebSocketPayload, ExcalidrawState } from '../../types/types';
 
 const ExcalidrawCanvas: React.FC = () => {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
-  const [isStreamReady, setIsStreamReady] = useState<boolean>(false);
+  const [, setIsStreamReady] = useState<boolean>(false);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
   
@@ -79,8 +79,10 @@ const ExcalidrawCanvas: React.FC = () => {
     setRemoteStreams(prev => new Map(prev).set(id, e.streams[0]));
   };
 
-  const handleReceivedMessage = async (event: MessageEvent) => {
-    const message: WebSocketPayload = JSON.parse(event.data);
+  WebSocketService.getInstance().getWebSocket()!.onmessage = (event) => {
+    const newMessage = event.data;
+    const message = JSON.parse(newMessage)
+console.log(message.method);
 
     switch (message.method) {
       case 'offer':

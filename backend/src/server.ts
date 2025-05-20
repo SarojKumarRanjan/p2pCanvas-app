@@ -9,7 +9,7 @@ const httpServer = http.createServer(app);
 setupWebSocket(httpServer);
 
 httpServer.listen(PORT, () => {
-    console.log(`Listening on port ${PORT}`);
+    // console.log(`Listening on port ${PORT}`);
 });
 
 
